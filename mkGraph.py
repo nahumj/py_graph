@@ -56,11 +56,55 @@ def ReadDataFile(FileName,DataFields,Separator=' ',SkipRows=0):
 #   PrintHeader='short','tall','off'
 ####
 
-def WriteDataFile(FileName, Data, DataFields, Separator=' ', FormatStyle='columns'):
+def WriteDataFile(FileName, Data, DataFields, Separator=' ', FormatStyle='columns', PrintHeader='off', Title=''):
+  
+  # check to make sure all data is the same size
+  sizeCheck = len(Data[DataFields[0]])
+  for name in DataFields:
+    if len(Data[name]) != sizeCheck:
+      print('In WriteDataFile: Not all data has the same number of elements')
+      exit()
+  
   File = open(FileName,'w')                                       # open the file
   
-  File.write('test')
+  if(Title!=''):
+    File.write(Title+'\n\n')
   
+  if(PrintHeader=='short'):
+    for nameIndex in range(len(DataFields)):
+      File.write(DataFields[nameIndex])
+      if (nameIndex < len(DataFields)-1):
+        File.write(Separator)
+    File.write('\n')
+    File.write('\n')
+
+  if(PrintHeader=='tall'):
+    for nameIndex in range(len(DataFields)):
+      File.write(str(nameIndex+1)+'. '+DataFields[nameIndex])
+      File.write('\n')
+    File.write('\n')
+
+  if (FormatStyle=='columns'):
+    for row in range(len(Data[DataFields[0]])):
+      for nameIndex in range(len(DataFields)):
+        File.write(Data[DataFields[nameIndex]][row])
+        if (nameIndex < len(DataFields)-1):
+          File.write(Separator)  
+      File.write('\n')
+
+  if (FormatStyle=='rows'):
+    for name in DataFields:
+      for index in range(len(Data[DataFields[0]])):
+        File.write(Data[name][index])
+        if (index < len(Data)-1):
+          File.write(Separator) 
+      File.write('\n')
+
+  File.close()
+      
+      
+    
+      
 
 
 
@@ -118,34 +162,34 @@ def BuildMultiPlot(DataMap,NamesList,XCoordinateName='',Columns=1):
 ####
 
 def BuildPlot(DataMap,NamesList,XCoordinateName='',AddLegend=''):
-  plt.figure()                                      # create a new figure
+  plt.figure()                                                # create a new figure
 
-  if XCoordinateName=='':                           # if there is no XCoordinateName
-    for count in range(len(NamesList)):             # for each name
+  if XCoordinateName=='':                                     # if there is no XCoordinateName
+    for count in range(len(NamesList)):                       # for each name
       plt.plot(DataMap[NamesList[count]],label=NamesList[count])
-                                                    # plot the data for each element in name in it's own plot
+                                                              # plot the data for each element in name in it's own plot
 
-  else:                                             # else, there is a XCoordinateName
-    for count in range(len(NamesList)):             # for each name
+  else:                                                       # else, there is a XCoordinateName
+    for count in range(len(NamesList)):                       # for each name
       plt.plot(DataMap[XCoordinateName],DataMap[NamesList[count]],label=NamesList[count])
-                                                    # plot the data for each element in name in it's own plot
-      plt.xlabel(XCoordinateName)                   # add a X axis label
+                                                              # plot the data for each element in name in it's own plot
+      plt.xlabel(XCoordinateName)                             # add a X axis label
 
   if (AddLegend!=""):
-    plt.legend(loc=AddLegend, shadow=True)          # add a legend
+    plt.legend(loc=AddLegend, shadow=True)                    # add a legend
     
-  return plt.gcf()                                  # gcf = get current figure - return that.
+  return plt.gcf()                                            # gcf = get current figure - return that.
 
 	  
 ######## LOAD DATA
 
 RepMin = 101
 RepMax = 105
-maxTime = 10000                                     # how many updated in this data?
-outputStep = 25                                     # how often was data written?
+maxTime = 10000                          # how many updated in this data?
+outputStep = 25                          # how often was data written?
 
-NumReps = RepMax - RepMin + 1                       # how many reps are there? used mostly in range(NumReps)
-RepRange = range(RepMin, (RepMax + 1))		    # a range i.e. [101,102,103,104...] used when we need to know the actual number
+NumReps = RepMax - RepMin + 1            # how many reps are there? used mostly in range(NumReps)
+RepRange = range(RepMin, (RepMax + 1))   # a range i.e. [101,102,103,104...] used when we need to know the actual number
 
 # make some containers
 aveData = []
@@ -156,8 +200,9 @@ for rep in RepRange:
   aveData.append(ReadDataFile('AvidaData/'+str(rep)+'/data/average.dat', ['update','merit'], Separator=' ', SkipRows=19))
   mateDisplayData.append(ReadDataFile('AvidaData/'+str(rep)+'/data/mating_display_data.dat', ['update','DispAUndef','DispAFemale','DispAMale'], Separator=' ', SkipRows=10))
 
-features = {'colors':['black','white','green'],'shapes':['square','circle','triangle']}
-WriteDataFile('TestFile.txt', features, ['colors','shapes'], Separator=' ', FormatStyle='columns')
+features = {'colors':['black','white','green'],'shapes':['square','circle','triangle'],'pets':['cat','dog','bird']}
+
+WriteDataFile('TestFile.txt', features, ['pets','colors','shapes'], Separator=':', FormatStyle='rows', PrintHeader = 'tall', Title = "some more info...")
 
 #BuildMultiPlot(DataMap = mateDisplayData[0], NamesList = ['DispAFemale', 'DispAMale'],XCoordinateName = 'update')
 #BuildMultiPlot(DataMap = mateDisplayData[0], NamesList = ['DispAFemale', 'DispAMale'], Columns = 2)
@@ -288,8 +333,8 @@ plt.fill_between(aveData[0]['update'],FemaleDispMean-FemaleDispStd,FemaleDispMea
 # add some formatting
 plt.legend(loc='upper left', shadow=True, fontsize=fontSizeLegend) # add a legend
 plt.title('Display (over Time)', fontsize=fontSizeTitle,fontweight='bold') # set the title
-plt.xlabel('Time (updates)')                             # set the x axis label
-plt.ylabel('Average Display')                            # set the y axis label
+plt.xlabel('Time (updates)')                                # set the x axis label
+plt.ylabel('Average Display')                               # set the y axis label
 
 # this subplot will take up the bottom left corner (bottom left of fourth row)
 plt.subplot(4,2,7)
@@ -317,8 +362,8 @@ plt.errorbar(sparseUpdates,sparseMeritsMean,yerr=sparseMeritsStd, fmt='--o')
 
 # add some formatting
 plt.title('Merit with Error Bars', fontsize=fontSizeTitle,fontweight='bold') # set the title
-plt.xlabel('Time (updates)')                             # set the x axis label
-plt.ylabel('Average Display')                            # set the y axis label
+plt.xlabel('Time (updates)')                                # set the x axis label
+plt.ylabel('Average Display')                               # set the y axis label
 
 
 # this tweaks the plot to make things lok beter
